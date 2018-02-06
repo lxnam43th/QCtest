@@ -639,3 +639,8 @@ Private Sub SendDataToServer(m_facode As String)
 
 
     End Sub
+
+3.4
+4
+5
+6
