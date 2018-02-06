@@ -10,31 +10,3 @@ nam 2
 1.2 them tiep
 2.2 add
 2.3 add
-
-1.1 them
-2.1 them
-2.2. them
-1.1 them
-1.2 them tiep
-2.2 add
-2.3 add
-
-
-1.1 them
-2.1 them
-2.2. them
-1.1 them
-1.2 them tiep
-2.2 add
-2.3 add
-
-
-1.1 them
-2.1 them
-2.2. them
-1.1 them
-1.2 them tiep
-2.2 add
-2.3 add
-
-
