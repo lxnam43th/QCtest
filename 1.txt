@@ -2,3 +2,638 @@ nam1
 nam2
 1.1
 1.2
+Private Sub SendDataToServer(m_facode As String)
+
+        ' chua co thi se phai khoi tao.
+
+        '''''''''''''''''''''''''''''''''
+        Dim M_CODE As String = ""
+        Dim M_oid_ERR As String = ""
+        Dim LOG_FILENAME As String = AppDomain.CurrentDomain.BaseDirectory & "\Log\" & Date.Now.ToString("yyyyMMdd") & ".txt"
+        'Dim LOG_DIRECTORY As String = AppDomain.CurrentDomain.BaseDirectory & "\Log"
+
+        If Not Directory.Exists(LOG_DIRECTORY) Then
+            Directory.CreateDirectory(LOG_DIRECTORY)
+        End If
+        If Not File.Exists(LOG_FILENAME) Then
+            Dim swr As StreamWriter
+            swr = File.CreateText(LOG_FILENAME)
+            swr.Write("Logfile for Generate payslip(HOGV). Create on " & Now.ToString("dd/MM/yyyy hh:mm:ss") & vbCrLf)
+            swr.Flush()
+            swr.Close()
+        End If
+        Dim Delete_File_log As String = AppDomain.CurrentDomain.BaseDirectory & "\Log\" & Date.Now.AddDays(-30).ToString("yyyyMMdd") & ".txt"
+        Dim Delete_File_log1 As String = AppDomain.CurrentDomain.BaseDirectory & "\Log\" & Date.Now.AddDays(-31).ToString("yyyyMMdd") & ".txt"
+        Dim Delete_File_log2 As String = AppDomain.CurrentDomain.BaseDirectory & "\Log\" & Date.Now.AddDays(-32).ToString("yyyyMMdd") & ".txt"
+
+        ' xoa file log.
+        If File.Exists(Delete_File_log) Then
+            File.Delete(Delete_File_log)
+
+        End If
+        If File.Exists(Delete_File_log1) Then
+            File.Delete(Delete_File_log1)
+
+        End If
+
+        If File.Exists(Delete_File_log2) Then
+            File.Delete(Delete_File_log2)
+
+        End If
+
+        ''''''''''''''''''''''''''''''''''
+
+        Dim OraConn As New OracleClient.OracleConnection
+        OraConn.ConnectionString = GetConnectionString("HOYA")
+
+        Dim m_CBaseParameterSetting As New CBaseParameterSetting
+        Dim ds As New DataSet
+        Dim i As Integer
+        Dim strSQL As String
+        Try
+            OraConn.Open()
+
+
+            If connectionServer() Then
+                AppendtoFile("********************************************" & vbCrLf, LOG_FILENAME)
+                AppendtoFile(Now.ToString("dd/MM/yyyy hh:mm:ss") & " --> BEGIN SEND DATA " & vbCrLf, LOG_FILENAME)
+
+                strSQL = " SELECT OID, month_1, from_date_2,"
+                strSQL += "  to_date_3, ecode_4, fullname_5,"
+                strSQL += "  startdate_6, department_7,"
+                strSQL += "  section_8, group_9, loai_hd_10,"
+                strSQL += " hoyav3.HOYA_QA_RECHECK.ssn_decrypt(  old_basic_salary_11 ) as old_basic_salary_11 , "
+                strSQL += " hoyav3.HOYA_QA_RECHECK.ssn_decrypt(current_basic_salary_12) as current_basic_salary_12 , "
+                strSQL += "   basicsalary_effectdate_13,"
+                strSQL += "  position_allowance_14, normal_working_days_15,"
+                strSQL += "   normal_working_hours_16,"
+                strSQL += "  days_day_office_s1_s2_17,"
+                strSQL += "  hours_day_office_s1_s2_18,"
+                strSQL += "  working_days_night_s3_19,"
+                strSQL += "  working_hours_night_s3_20,"
+                strSQL += "  actual_working_money_21, paid_leave_days_22,"
+                strSQL += "  paid_leave_hours_23, paid_leave_money_24,"
+                strSQL += "  up_leave_days_25, up_leave_hours_26,"
+                strSQL += "  up_leave_money_27, shift_allowance_normal_28,"
+                strSQL += "  ot_days_day_office_s1_s2_30,"
+                strSQL += "   actual_salary_normal_29, ot_days_night_s3_31,"
+                strSQL += "   hours_30_32, hours_150_33,"
+                strSQL += "   hours_215_34, hours_200_35,"
+                strSQL += "   hours_280_36, hours_300_37,"
+                strSQL += "   hours_410_38, other_hours_39,"
+                strSQL += "   moneys_130_40, moneys_150_41,"
+                strSQL += "   moneys_215_42, moneys_200_43,"
+                strSQL += "   moneys_280_44, moneys_300_45,"
+                strSQL += "   moneys_410_46, other_moneys_47,"
+                strSQL += "   shift_allowance_ot_48, total_ot_money_49,"
+                strSQL += "   trans_allowance_50, house_allowance_51,"
+                strSQL += "   bonus_52, tax_adjust_53,"
+                strSQL += "   nontax_adjust_54, other_55,"
+                strSQL += "  hoyav3.HOYA_QA_RECHECK.ssn_decrypt( total_gross_salary_56) as total_gross_salary_56 , ins_57,"
+                strSQL += "    ins_last_month_58, medical_4_5_59,"
+                strSQL += "   tax_income_60, super_meal_61,"
+                strSQL += "  other_deduc_62, hoyav3.HOYA_QA_RECHECK.ssn_decrypt( total_deduct_63) as total_deduct_63 ,"
+                strSQL += "  hoyav3.HOYA_QA_RECHECK.ssn_decrypt( net_pay_64 ) as net_pay_64, facode, pddate, phanloaiHD,LUU_Y_67,them_tieu_de_email_68, "
+                strSQL += " col_69, col_70 ,col_71 ,col_72 ,col_73 ,col_74 ,col_75 ,col_76 ,col_77 ,col_78 ,col_79 ,col_80 "
+                strSQL += " from  hoyav3.qa_auto_gen "
+                strSQL += " where facode='" + m_facode + "' "
+                strSQL += " and  ( length(memo_65) < 3 or memo_65 is null ) and rownum<= 200 "
+                'strSQL += " and facode='HY20161734' "
+                'strSQL += "  where oid='344401B3942F00AAE053AC190928268C' "
+
+
+                'Dim ds As New DataSet
+                'ds = Me.m_CBaseParameterSetting.GetBrowseBK7_values_dataset(strQuery)
+                ds = fcn_Getdata(strSQL, OraConn)
+                'Du lieu cua bang gia tri
+
+                With ds.Tables(0)
+                    If .Rows.Count > 0 Then
+
+                        For i = 0 To .Rows.Count - 1
+
+                            Dim obj_sal_new As New HR_Salary.HR_salary_info_new
+
+                            ' luu oid.
+                            M_oid_ERR = .Rows(i).Item("oid").ToString
+
+                            obj_sal_new.Get_pddate = .Rows(i).Item("pddate").ToString ' dtFromDate.Value.ToString("yyyyMM")
+
+                            obj_sal_new.Get_facode = .Rows(i).Item("facode").ToString
+
+                            obj_sal_new.Get_factory = "HOYA GLASS DISK VIETNAM LTD."
+                            If obj_sal_new.Get_facode = "1" Then
+                                obj_sal_new.Get_factory = "HOYA GLASS DISK VIETNAM II LTD."
+                                obj_sal_new.Get_facode = "1"
+                            End If
+                            If obj_sal_new.Get_facode = "10" Then
+                                obj_sal_new.Get_factory = "HOYA MEMORY DISK TECHNOLOGIES LTD."
+                                obj_sal_new.Get_facode = "10"
+                            End If
+                            '' s
+                            obj_sal_new.Get_type_mess = "phieuluong"
+                            obj_sal_new.Get_type_note_name = "Phi?u luong tháng " + .Rows(i).Item("month_1").ToString ' dtFromDate.Value.ToString("MM-yyyy")
+
+
+
+                            If .Rows(i).Item("phanloaiHD").ToString.ToLower.IndexOf("contract") > 0 Then
+                                obj_sal_new.Get_type_mess = "phieuluong"
+
+                                obj_sal_new.Get_type_note_name = "Phi?u luong tháng " + .Rows(i).Item("month_1").ToString ' dtFromDate.Value.ToString("MM-yyyy")
+
+
+                            End If
+
+
+
+                            obj_sal_new.Get_1_thang = .Rows(i).Item("month_1").ToString ' dtFromDate.Value.ToString("MM-yyyy") 'grdData.Rows(i).Cells(0).Value.ToString '
+
+                            ''''''''''''''''''
+
+                            'obj_sal_new.Get_1_thang = dtFromDate.Value.ToString("MM-yyyy") ' grdData.Rows(i).Cells(0).Value.ToString
+                            obj_sal_new.Get_2_from = .Rows(i).Item("from_date_2").ToString ' "01" + dtFromDate.Value.ToString("-MM-yyyy") 'grdData.Rows(i).Cells(1).Value.ToString
+                            obj_sal_new.Get_3_to = .Rows(i).Item("to_date_3").ToString ' DateTime.DaysInMonth(dtFromDate.Value.Year, dtFromDate.Value.Month).ToString.ToString() + dtFromDate.Value.ToString("-MM-yyyy") 'grdData.Rows(i).Cells(2).Value.ToString
+                            obj_sal_new.Get_4_manv = .Rows(i).Item("ecode_4").ToString '  grdData.Rows(i).Cells(3).Value.ToString
+                            M_CODE = obj_sal_new.Get_4_manv
+                            obj_sal_new.Get_5_hoten = .Rows(i).Item("fullname_5").ToString '  grdData.Rows(i).Cells(4).Value.ToString
+
+                            obj_sal_new.Get_6_ngaybd = .Rows(i).Item("startdate_6").ToString ' .Rows(i).Cells(5).Value.ToString
+
+                            obj_sal_new.Get_7_phong = .Rows(i).Item("department_7").ToString ' .Rows(i).Cells(6).Value.ToString
+                            obj_sal_new.Get_8_bophan = .Rows(i).Item("section_8").ToString ' .Rows(i).Cells(7).Value.ToString
+
+                            obj_sal_new.Get_9_nhom = .Rows(i).Item("group_9").ToString ' .Rows(i).Cells(8).Value.ToString
+                            obj_sal_new.Get_10_loaihd = .Rows(i).Item("loai_hd_10").ToString ' .Rows(i).Cells(9).Value.ToString
+
+                            If .Rows(i).Item("old_basic_salary_11").ToString = "" Or .Rows(i).Item("old_basic_salary_11").ToString = "0" Then ' .Rows(i).Cells(10).Value.ToString = "0" Then
+                                obj_sal_new.Get_11_old_salary = ""
+                            Else
+                                obj_sal_new.Get_11_old_salary = .Rows(i).Item("old_basic_salary_11").ToString ' .Rows(i).Cells(10).Value.ToString
+                            End If
+
+                            obj_sal_new.Get_12_new_salary = .Rows(i).Item("current_basic_salary_12").ToString ' .Rows(i).Cells(11).Value.ToString
+
+                            ' .Rows(i).Cells(12).Value.ToString.Split(" ")
+                            obj_sal_new.Get_13_hieuluc = .Rows(i).Item("basicsalary_effectdate_13").ToString ' .Rows(i).Cells(12).Value.ToString
+
+                            obj_sal_new.Get_14_phucapluong = .Rows(i).Item("position_allowance_14").ToString ' .Rows(i).Cells(13).Value.ToString
+                            obj_sal_new.Get_15_tglv_bt_ngay = .Rows(i).Item("normal_working_days_15").ToString ' .Rows(i).Cells(14).Value.ToString
+                            obj_sal_new.Get_16_tglv_bt_gio = .Rows(i).Item("normal_working_hours_16").ToString ' .Rows(i).Cells(15).Value.ToString
+
+                            obj_sal_new.Get_17_hc_s1_s2_ngay = .Rows(i).Item("days_day_office_s1_s2_17").ToString ' .Rows(i).Cells(16).Value.ToString
+                            obj_sal_new.Get_18_hc_s1_s2_gio = .Rows(i).Item("hours_day_office_s1_s2_18").ToString ' .Rows(i).Cells(17).Value.ToString
+                            obj_sal_new.Get_19_dem_s3_ngay = .Rows(i).Item("working_days_night_s3_19").ToString ' .Rows(i).Cells(18).Value.ToString
+                            obj_sal_new.Get_20_dem_s3_gio = .Rows(i).Item("working_hours_night_s3_20").ToString ' .Rows(i).Cells(19).Value.ToString
+
+
+                            obj_sal_new.Get_21_thanhtien = .Rows(i).Item("actual_working_money_21").ToString ' .Rows(i).Cells(20).Value.ToString
+                            obj_sal_new.Get_22_nghi_huong_luong_ngay = .Rows(i).Item("paid_leave_days_22").ToString ' .Rows(i).Cells(21).Value.ToString
+                            obj_sal_new.Get_23_nghi_huong_luong_gio = .Rows(i).Item("paid_leave_hours_23").ToString ' .Rows(i).Cells(22).Value.ToString
+                            obj_sal_new.Get_24_nghi_huong_luong_thanhtien = .Rows(i).Item("paid_leave_money_24").ToString ' .Rows(i).Cells(23).Value.ToString
+
+                            obj_sal_new.Get_25_nghi_ko_luong_ngay = .Rows(i).Item("up_leave_days_25").ToString ' .Rows(i).Cells(24).Value.ToString
+                            obj_sal_new.Get_26_nghi_ko_luong_gio = .Rows(i).Item("up_leave_hours_26").ToString ' .Rows(i).Cells(25).Value.ToString
+                            obj_sal_new.Get_27_nghi_ko_luong_thanhtien = .Rows(i).Item("up_leave_money_27").ToString ' .Rows(i).Cells(26).Value.ToString
+                            obj_sal_new.Get_28_tro_cap_ca = .Rows(i).Item("shift_allowance_normal_28").ToString ' .Rows(i).Cells(27).Value.ToString
+
+                            ' chu y cot nay sai thu tu.
+
+                            obj_sal_new.Get_29_tong_tien_luong_thuc_tra = .Rows(i).Item("actual_salary_normal_29").ToString ' .sai thu tu. (28).Value.ToString
+                            obj_sal_new.Get_30_so_ngay_lamthem_hc_s1_s2 = .Rows(i).Item("ot_days_day_office_s1_s2_30").ToString ' .Rows(i).Cells(29).Value.ToString
+                            obj_sal_new.Get_31_so_ngay_lamthem_dem_s3 = .Rows(i).Item("ot_days_night_s3_31").ToString ' .Rows(i).Cells(30).Value.ToString
+                            obj_sal_new.Get_32_tyle_30_gio = .Rows(i).Item("hours_30_32").ToString ' .Rows(i).Cells(31).Value.ToString
+
+                            obj_sal_new.Get_33_tyle_150_gio = .Rows(i).Item("hours_150_33").ToString ' .Rows(i).Cells(32).Value.ToString
+                            obj_sal_new.Get_34_tyle_215_gio = .Rows(i).Item("hours_215_34").ToString ' .Rows(i).Cells(33).Value.ToString
+                            obj_sal_new.Get_35_tyle_200_gio = .Rows(i).Item("hours_200_35").ToString ' .Rows(i).Cells(34).Value.ToString
+                            obj_sal_new.Get_36_tyle_280_gio = .Rows(i).Item("hours_280_36").ToString ' .Rows(i).Cells(35).Value.ToString
+
+                            obj_sal_new.Get_37_tyle_300_gio = .Rows(i).Item("hours_300_37").ToString ' .Rows(i).Cells(36).Value.ToString
+                            obj_sal_new.Get_38_tyle_410_gio = .Rows(i).Item("hours_410_38").ToString ' .Rows(i).Cells(37).Value.ToString
+                            obj_sal_new.Get_39_hesokhac_gio = .Rows(i).Item("other_hours_39").ToString ' .Rows(i).Cells(38).Value.ToString
+                            obj_sal_new.Get_40_tyle_30_tien = .Rows(i).Item("moneys_130_40").ToString ' .Rows(i).Cells(39).Value.ToString
+
+                            obj_sal_new.Get_41_tyle_150_tien = .Rows(i).Item("moneys_150_41").ToString ' .Rows(i).Cells(40).Value.ToString
+                            obj_sal_new.Get_42_tyle_215_tien = .Rows(i).Item("moneys_215_42").ToString ' .Rows(i).Cells(41).Value.ToString
+                            obj_sal_new.Get_43_tyle_200_tien = .Rows(i).Item("moneys_200_43").ToString ' .Rows(i).Cells(42).Value.ToString
+                            obj_sal_new.Get_44_tyle_280_tien = .Rows(i).Item("moneys_280_44").ToString ' .Rows(i).Cells(43).Value.ToString
+
+                            obj_sal_new.Get_45_tyle_300_tien = .Rows(i).Item("moneys_300_45").ToString ' .Rows(i).Cells(44).Value.ToString
+                            obj_sal_new.Get_46_tyle_400_tien = .Rows(i).Item("moneys_410_46").ToString ' .Rows(i).Cells(45).Value.ToString
+                            obj_sal_new.Get_47_hesokhac_tien = .Rows(i).Item("other_moneys_47").ToString ' .Rows(i).Cells(46).Value.ToString
+                            obj_sal_new.Get_48_trocap_ot = .Rows(i).Item("shift_allowance_ot_48").ToString ' .Rows(i).Cells(47).Value.ToString
+
+                            obj_sal_new.Get_49_tongtien_lam_dem_ot = .Rows(i).Item("total_ot_money_49").ToString ' .Rows(i).Cells(48).Value.ToString
+                            obj_sal_new.Get_50_trocap_dilai = .Rows(i).Item("trans_allowance_50").ToString ' .Rows(i).Cells(49).Value.ToString
+                            obj_sal_new.Get_51_trocap_nha = .Rows(i).Item("house_allowance_51").ToString ' .Rows(i).Cells(50).Value.ToString
+                            obj_sal_new.Get_52_thuong = .Rows(i).Item("bonus_52").ToString ' .Rows(i).Cells(51).Value.ToString
+
+                            obj_sal_new.Get_53_dieuchinh_thue = .Rows(i).Item("tax_adjust_53").ToString ' .Rows(i).Cells(52).Value.ToString
+                            obj_sal_new.Get_54_dieuchinh_ko_thue = .Rows(i).Item("nontax_adjust_54").ToString ' .Rows(i).Cells(53).Value.ToString
+                            obj_sal_new.Get_55_khac = .Rows(i).Item("other_55").ToString ' .Rows(i).Cells(54).Value.ToString
+                            obj_sal_new.Get_56_tongthunhap = .Rows(i).Item("total_gross_salary_56").ToString ' .Rows(i).Cells(55).Value.ToString
+
+                            obj_sal_new.Get_57_bhxh_bhyt_bhtn = .Rows(i).Item("ins_57").ToString ' .Rows(i).Cells(56).Value.ToString
+                            obj_sal_new.Get_58_bhxh_bhyt_bhtn_truoc = .Rows(i).Item("ins_last_month_58").ToString ' .Rows(i).Cells(57).Value.ToString
+                            obj_sal_new.Get_59_phi_bhyt_khac = .Rows(i).Item("medical_4_5_59").ToString ' .Rows(i).Cells(58).Value.ToString
+                            obj_sal_new.Get_60_thue_tncn = .Rows(i).Item("tax_income_60").ToString ' .Rows(i).Cells(59).Value.ToString
+
+                            obj_sal_new.Get_61_anphu = .Rows(i).Item("super_meal_61").ToString ' .Rows(i).Cells(60).Value.ToString
+                            obj_sal_new.Get_62_khautru_khac = .Rows(i).Item("other_deduc_62").ToString ' .Rows(i).Cells(61).Value.ToString
+                            obj_sal_new.Get_63_tong_khau_tru = .Rows(i).Item("total_deduct_63").ToString ' .Rows(i).Cells(62).Value.ToString
+                            obj_sal_new.Get_64_thunhap_thuc_nhan = .Rows(i).Item("net_pay_64").ToString ' .Rows(i).Cells(63).Value.ToString
+                            obj_sal_new.Get_65_phanloai_HD = .Rows(i).Item("phanloaiHD").ToString
+
+                            obj_sal_new.Get_67_luu_y = .Rows(i).Item("luu_y_67").ToString
+
+                            obj_sal_new.Get_68_them_tieu_de_email = .Rows(i).Item("them_tieu_de_email_68").ToString
+
+
+                            obj_sal_new.Get_69 = .Rows(i).Item("col_69").ToString
+
+                            obj_sal_new.Get_70 = .Rows(i).Item("col_70").ToString
+                            obj_sal_new.Get_71 = .Rows(i).Item("col_71").ToString
+                            obj_sal_new.Get_72 = .Rows(i).Item("col_72").ToString
+                            obj_sal_new.Get_73 = .Rows(i).Item("col_73").ToString
+                            obj_sal_new.Get_74 = .Rows(i).Item("col_74").ToString
+
+                            obj_sal_new.Get_75 = .Rows(i).Item("col_75").ToString
+                            obj_sal_new.Get_76 = .Rows(i).Item("col_76").ToString
+                            obj_sal_new.Get_77 = .Rows(i).Item("col_77").ToString
+                            obj_sal_new.Get_78 = .Rows(i).Item("col_78").ToString
+                            obj_sal_new.Get_79 = .Rows(i).Item("col_79").ToString
+                            obj_sal_new.Get_80 = .Rows(i).Item("col_80").ToString
+
+                            ''''''''''''''''''''
+
+                            '' sua lai doan nay.
+
+                            If .Rows(i).Item("phanloaiHD").ToString = "baohiem" Then
+                                obj_sal_new.Get_type_mess = "baohiem"
+                                obj_sal_new.Get_type_note_name = "Phi?u thanh toán ch? d? b?o hi?m tháng " + .Rows(i).Item("month_1").ToString ' 
+
+                                If obj_sal_new.Get_facode = "10" Then
+                                    obj_sal_new.Get_55_khac = "Ð? ngh? NLÐ ki?m tra tài kho?n và liên l?c theo s? 0221 397 4924 (s? máy l?: 143) n?u có th?c m?c c?n gi?i dáp."
+                                End If
+                                If obj_sal_new.Get_facode = "1" Then
+                                    obj_sal_new.Get_55_khac = "Ð? ngh? NLÐ ki?m tra tài kho?n và liên l?c theo s? 0221 397 4686 (s? máy l?: 113 ho?c 143) n?u có th?c m?c c?n gi?i dáp."
+                                End If
+                                If obj_sal_new.Get_facode = "68" Then
+                                    obj_sal_new.Get_55_khac = "Ð? ngh? NLÐ ki?m tra tài kho?n và liên l?c theo s? 0243 9516397 (s? máy l?: 141) n?u có th?c m?c c?n gi?i dáp."
+                                End If
+
+                            End If
+
+                            If .Rows(i).Item("phanloaiHD").ToString = "ketquadongbh" Then
+                                Dim m_type_year As String = " d?u nam "
+                                If .Rows(i).Item("from_date_2").ToString <> "1" Then
+                                    m_type_year = " cu?i nam "
+                                End If
+                                obj_sal_new.Get_type_mess = "ketquadongbh"
+                                obj_sal_new.Get_type_note_name = "Thông báo k?t qu? tham gia b?o hi?m 6 tháng " + m_type_year + .Rows(i).Item("to_date_3").ToString
+
+                                If obj_sal_new.Get_facode = "10" Then
+                                    obj_sal_new.Get_55_khac = "Ð? ngh? NLÐ ki?m tra và liên l?c theo s? 0221 397 4924 (s? máy l?: 143) n?u có th?c m?c c?n gi?i dáp."
+                                End If
+                                If obj_sal_new.Get_facode = "1" Then
+                                    obj_sal_new.Get_55_khac = "Ð? ngh? NLÐ ki?m tra và liên l?c theo s? 0221 397 4686 và làm theo hu?ng d?n (s? máy l?: 113 ho?c 143) n?u có th?c m?c c?n gi?i dáp."
+                                End If
+                                If obj_sal_new.Get_facode = "68" Then
+                                    obj_sal_new.Get_55_khac = "Ð? ngh? NLÐ ki?m tra và liên l?c theo s? 0243 9516397 (s? máy l?: 141 ho?c 114) n?u có th?c m?c c?n gi?i dáp."
+                                End If
+
+                            End If
+
+                            If obj_sal_new.Get_10_loaihd = "bonus" Then
+                                obj_sal_new.Get_type_mess = "bonus"
+                                obj_sal_new.Get_type_note_name = "thu?ng " + .Rows(i).Item("up_leave_hours_26").ToString ' 
+
+                                If obj_sal_new.Get_facode = "10" Then
+                                    obj_sal_new.Get_55_khac = "Ð? ngh? NLÐ ki?m tra và liên l?c theo s? 0221 397 4924 (s? máy l?: 144) n?u có th?c m?c c?n gi?i dáp."
+                                End If
+                                If obj_sal_new.Get_facode = "1" Then
+                                    obj_sal_new.Get_55_khac = "Ð? ngh? NLÐ ki?m tra và liên l?c theo s? 0221 397 4686 và làm theo hu?ng d?n ho?c s? máy l? 141/142 n?u có th?c m?c c?n gi?i dáp."
+                                End If
+                                If obj_sal_new.Get_facode = "68" Then
+                                    obj_sal_new.Get_55_khac = "Ð? ngh? NLÐ ki?m tra và liên l?c theo s? 0243 9516397 (s? máy l?: 708 ho?c 112) n?u có th?c m?c c?n gi?i dáp."
+                                End If
+
+                            End If
+
+                            ' thue thu nhap.
+                            If obj_sal_new.Get_10_loaihd = "thuethunhap" Then
+                                obj_sal_new.Get_type_mess = "thuethunhap"
+                                obj_sal_new.Get_type_note_name = .Rows(i).Item("from_date_2").ToString ' 
+
+                                If obj_sal_new.Get_facode = "10" Then
+                                    obj_sal_new.Get_55_khac = "Ð? ngh? NLÐ ki?m tra và liên l?c theo s? 0221 397 4924 (s? máy l?: 144) n?u có th?c m?c c?n gi?i dáp."
+                                End If
+                                If obj_sal_new.Get_facode = "1" Then
+                                    obj_sal_new.Get_55_khac = "Ð? ngh? NLÐ ki?m tra và liên l?c theo s? 0221 397 4686 và làm theo hu?ng d?n ho?c s? máy l?: 141/142) n?u có th?c m?c c?n gi?i dáp."
+                                End If
+                                If obj_sal_new.Get_facode = "68" Then
+                                    obj_sal_new.Get_55_khac = "Ð? ngh? NLÐ ki?m tra và liên l?c theo s? 0243 9516397 (s? máy l?: 708 ho?c 112) n?u có th?c m?c c?n gi?i dáp."
+                                End If
+
+                            End If
+
+                            ' thongbao.
+                            If obj_sal_new.Get_10_loaihd = "thongbao" Then
+
+                                obj_sal_new.Get_factory = "Công ty HOYA GLASS DISK VIETNAM LTD xin trân tr?ng thông báo t?i: "
+                                If obj_sal_new.Get_facode = "1" Then
+                                    obj_sal_new.Get_factory = "Công ty HOYA GLASS DISK VIETNAM II LTD xin trân tr?ng thông báo t?i: "
+                                    obj_sal_new.Get_facode = "1"
+                                End If
+                                If obj_sal_new.Get_facode = "10" Then
+                                    obj_sal_new.Get_factory = "Công ty HOYA MEMORY DISK TECHNOLOGIES LTD xin trân tr?ng thông báo t?i: "
+                                    obj_sal_new.Get_facode = "10"
+                                End If
+
+                                obj_sal_new.Get_type_mess = "thongbao"
+                                obj_sal_new.Get_type_note_name = .Rows(i).Item("from_date_2").ToString ' 
+
+                                If obj_sal_new.Get_facode = "10" Then
+                                    obj_sal_new.Get_55_khac = "Ð? ngh? NLÐ ki?m tra và liên l?c theo s? 0221 397 4924 (s? máy l?: 144) n?u có th?c m?c c?n gi?i dáp."
+                                End If
+                                If obj_sal_new.Get_facode = "1" Then
+                                    obj_sal_new.Get_55_khac = "Ð? ngh? NLÐ ki?m tra và liên l?c theo s? 0221 397 4686 và làm theo hu?ng d?n ho?c s? máy l?: 141/142 n?u có th?c m?c c?n gi?i dáp."
+                                End If
+                                If obj_sal_new.Get_facode = "68" Then
+                                    obj_sal_new.Get_55_khac = "Ð? ngh? NLÐ ki?m tra và liên l?c theo s? 0243 9516397 (s? máy l?: 708 ho?c 112) n?u có th?c m?c c?n gi?i dáp."
+                                End If
+
+                            End If
+
+                            If obj_sal_new.Get_10_loaihd = "tuyendung" Then
+
+                                obj_sal_new.Get_factory = "Công ty HOYA GLASS DISK VIETNAM LTD xin trân tr?ng thông báo t?i: "
+                                If obj_sal_new.Get_facode = "1" Then
+                                    obj_sal_new.Get_factory = "Công ty HOYA GLASS DISK VIETNAM II LTD xin trân tr?ng thông báo t?i: "
+                                    obj_sal_new.Get_facode = "1"
+                                End If
+                                If obj_sal_new.Get_facode = "10" Then
+                                    obj_sal_new.Get_factory = "Công ty HOYA MEMORY DISK TECHNOLOGIES LTD xin trân tr?ng thông báo t?i: "
+                                    obj_sal_new.Get_facode = "10"
+                                End If
+
+                                obj_sal_new.Get_type_mess = "tuyendung"
+                                obj_sal_new.Get_type_note_name = .Rows(i).Item("from_date_2").ToString ' 
+
+                                If obj_sal_new.Get_facode = "10" Then
+                                    obj_sal_new.Get_55_khac = "Ð? ngh? NLÐ ki?m tra và liên l?c theo s? 0221 397 4924 (s? máy l?: 144) n?u có th?c m?c c?n gi?i dáp."
+                                End If
+                                If obj_sal_new.Get_facode = "1" Then
+                                    obj_sal_new.Get_55_khac = "Ð? ngh? NLÐ ki?m tra và liên l?c theo s? 0221 397 4686 (s? máy l?: 141 ho?c 142) n?u có th?c m?c c?n gi?i dáp."
+                                End If
+                                If obj_sal_new.Get_facode = "68" Then
+                                    obj_sal_new.Get_55_khac = "Ð? ngh? NLÐ ki?m tra và liên l?c theo s? 0243 9516397 (s? máy l?: 708 ho?c 112) n?u có th?c m?c c?n gi?i dáp."
+                                End If
+
+                            End If
+
+
+                            If obj_sal_new.Get_10_loaihd = "ATVSV" Then
+
+                                obj_sal_new.Get_factory = "Công ty HOYA GLASS DISK VIETNAM LTD xin trân tr?ng thông báo t?i: "
+                                If obj_sal_new.Get_facode = "1" Then
+                                    obj_sal_new.Get_factory = "Công ty HOYA GLASS DISK VIETNAM II LTD xin trân tr?ng thông báo t?i: "
+                                    obj_sal_new.Get_facode = "1"
+                                End If
+                                If obj_sal_new.Get_facode = "10" Then
+                                    obj_sal_new.Get_factory = "Công ty HOYA MEMORY DISK TECHNOLOGIES LTD xin trân tr?ng thông báo t?i: "
+                                    obj_sal_new.Get_facode = "10"
+                                End If
+
+                                obj_sal_new.Get_type_mess = "ATVSV"
+                                obj_sal_new.Get_type_note_name = .Rows(i).Item("from_date_2").ToString ' 
+
+                                If obj_sal_new.Get_facode = "10" Then
+                                    obj_sal_new.Get_55_khac = "Ð? ngh? NLÐ ki?m tra và liên l?c theo s? 0221 397 4924 (s? máy l?: 144) n?u có th?c m?c c?n gi?i dáp."
+                                End If
+                                If obj_sal_new.Get_facode = "1" Then
+                                    obj_sal_new.Get_55_khac = "Ð? ngh? NLÐ ki?m tra và liên l?c theo s? 0221 397 4686 (s? máy l?: 141 ho?c 142) n?u có th?c m?c c?n gi?i dáp."
+                                End If
+                                If obj_sal_new.Get_facode = "68" Then
+                                    obj_sal_new.Get_55_khac = "Ð? ngh? NLÐ ki?m tra và liên l?c theo s? 0243 9516397 (s? máy l?: 708 ho?c 112) n?u có th?c m?c c?n gi?i dáp."
+                                End If
+
+                            End If
+
+                            ' nghiviec.
+                            If obj_sal_new.Get_10_loaihd = "nghiviec" Then
+                                obj_sal_new.Get_type_mess = "nghiviec"
+                                obj_sal_new.Get_type_note_name = " Thông báo thu nh?p " ' 
+                                'N?u có th?c m?c liên quan d?n ti?n luong và các kho?n thanh toán ngh? vi?c anh/ ch? vui lòng liên l?c l?i v?i công ty theo s? di?n tho?i
+                                If obj_sal_new.Get_facode = "10" Then
+                                    obj_sal_new.Get_80 = "N?u có th?c m?c liên quan d?n ti?n luong và các kho?n thanh toán ngh? vi?c anh/ ch? vui lòng liên l?c l?i v?i công ty theo s? di?n tho?i 0221 397 4924 (s? máy l?: 144), d? du?c gi?i dáp."
+                                    'obj_sal_new.Get_79 = "Please check your account for more detail. For further information, please call: 0221 397 4924 ( ext: 709 or 112)."
+                                End If
+                                If obj_sal_new.Get_facode = "1" Then
+                                    obj_sal_new.Get_80 = "N?u có th?c m?c liên quan d?n ti?n luong và các kho?n thanh toán ngh? vi?c anh/ ch? vui lòng liên l?c l?i v?i công ty theo s? di?n tho?i 0221 397 4686 và làm theo hu?ng d?n ho?c s? máy l?: 141/142, d? du?c gi?i dáp."
+                                    'obj_sal_new.Get_79 = "Please check your account for more detail. For further information, please call: 0221 397 4686 ( ext: 141 or 142)."
+                                End If
+                                If obj_sal_new.Get_facode = "68" Then
+                                    obj_sal_new.Get_80 = "N?u có th?c m?c liên quan d?n ti?n luong và các kho?n thanh toán ngh? vi?c anh/ ch? vui lòng liên l?c l?i v?i công ty theo s? di?n tho?i 0243 9516397 (s? máy l?: 708 ho?c 112), d? du?c gi?i dáp."
+                                    'obj_sal_new.Get_79 = "Please check your account for more detail. For further information, please call: 0243 9516397 ( ext: 708 or 112)."
+                                End If
+
+                            End If
+
+                            ' congdoan.
+                            If obj_sal_new.Get_10_loaihd = "congdoan" Then
+                                obj_sal_new.Get_type_mess = "congdoan"
+                                obj_sal_new.Get_type_note_name = "Chi tr? tr? c?p cho công doàn viên " ' 
+                                'Công doàn Công ty TNHH HOYA Glass Disk Vi?t Nam trân tr?ng thông báo
+                                If obj_sal_new.Get_facode = "10" Then
+                                    obj_sal_new.Get_factory = "Công doàn Công ty TNHH HOYA Memory Disk Vi?t Nam trân tr?ng thông báo"
+                                    obj_sal_new.Get_55_khac = "Ð? ngh? NLÐ ki?m tra và liên l?c theo s? 0221 397 4924 (s? máy l?: 144) n?u có th?c m?c c?n gi?i dáp."
+
+                                End If
+                                If obj_sal_new.Get_facode = "1" Then
+                                    obj_sal_new.Get_factory = "Công doàn Công ty TNHH HOYA II Glass Disk Vi?t Nam trân tr?ng thông báo"
+                                    obj_sal_new.Get_55_khac = "Ð? ngh? NLÐ ki?m tra và liên l?c theo s? 0221 397 4686 và làm theo hu?ng d?n ho?c s? máy l?: 141/142 n?u có th?c m?c c?n gi?i dáp."
+
+                                End If
+                                If obj_sal_new.Get_facode = "68" Then
+                                    obj_sal_new.Get_factory = "Công doàn Công ty TNHH HOYA Glass Disk Vi?t Nam trân tr?ng thông báo"
+                                    obj_sal_new.Get_55_khac = "Ð? ngh? NLÐ ki?m tra và liên l?c theo s? 0243 9516397 (s? máy l?: 708 ho?c 112) n?u có th?c m?c c?n gi?i dáp."
+
+                                End If
+
+                            End If
+
+
+
+                            Dim arr_location() As String
+                            'PACKING/HOGV-B
+                            arr_location = obj_sal_new.Get_8_bophan.Split("/")
+                            obj_sal_new.Get_location = arr_location(0)
+
+                            'obj_salary.Get_1_factory_A_1 = grdData.Rows(i).Cells("OID").Value.ToString
+
+
+
+                            Dim m_result As String
+                            '1
+                            If obj_sal_new.Get_type_mess = "baohiem" Then
+                                m_result = m_CBaseParameterSetting.updateData_for_excelfile_baohiem(obj_sal_new, OraConn)
+                            End If
+                            '2
+                            If obj_sal_new.Get_type_mess = "phieuluong" Then
+                                m_result = m_CBaseParameterSetting.updateData_for_excelfile_sal(obj_sal_new, OraConn)
+                            End If
+                            '3
+                            If obj_sal_new.Get_type_mess = "ketquadongbh" Then
+                                m_result = m_CBaseParameterSetting.updateData_for_ketquadongbh(obj_sal_new, OraConn)
+                            End If
+                            '4
+                            If obj_sal_new.Get_type_mess = "bonus" Then
+                                m_result = m_CBaseParameterSetting.updateData_for_excelfile_bonus(obj_sal_new, OraConn)
+                            End If
+
+                            '5
+                            If obj_sal_new.Get_type_mess = "thuethunhap" Then
+                                m_result = m_CBaseParameterSetting.updateData_for_thuethunhap(obj_sal_new, OraConn)
+                            End If
+                            '6. thong bao
+                            If obj_sal_new.Get_type_mess = "thongbao" Then
+                                m_result = m_CBaseParameterSetting.updateData_for_thongbao(obj_sal_new, OraConn)
+                                send_notices_employees_from_HR(obj_sal_new)
+                            End If
+                            '7 nghi viec.
+                            If obj_sal_new.Get_type_mess = "nghiviec" Then
+                                m_result = m_CBaseParameterSetting.updateData_for_nghiviec(obj_sal_new, OraConn)
+                            End If
+                            '8 congdoan.
+                            If obj_sal_new.Get_type_mess = "congdoan" Then
+                                m_result = m_CBaseParameterSetting.updateData_for_excelfile_congdoan(obj_sal_new, OraConn)
+                            End If
+                            '9. tuyendung
+                            If obj_sal_new.Get_type_mess = "tuyendung" Then
+                                m_result = m_CBaseParameterSetting.updateData_for_tuyendung(obj_sal_new, OraConn)
+                                send_notices_employees_from_HR_tuyendung(obj_sal_new)
+                            End If
+                            '10. ATVSV
+                            If obj_sal_new.Get_type_mess = "ATVSV" Then
+                                obj_sal_new.Get_67_luu_y = "Quy?t d?nh công nh?n m?ng lu?i ATVSV-s? " + obj_sal_new.Get_20_dem_s3_gio + " hi?u l?c ngày " + obj_sal_new.Get_21_thanhtien
+                                m_result = m_CBaseParameterSetting.updateData_for_ATVSV(obj_sal_new, OraConn)
+                                Dim arr_oid() As String
+                                arr_oid = m_result.Split("!!")
+                                If arr_oid(2) <> "" Then
+                                    obj_sal_new.Get_OId = arr_oid(2)
+                                    send_notices_employees_from_HR_ATVSV(obj_sal_new)
+                                End If
+
+                            End If
+
+
+                            If m_result.IndexOf("OK") < 1 Then
+                                m_CBaseParameterSetting.UpdateData_Data_gen_note(.Rows(i).Item("OID").ToString, OraConn, m_result.Substring(0, 90))
+                            Else
+                                m_CBaseParameterSetting.del_Data_gen(OraConn, .Rows(i).Item("OID").ToString)
+                            End If
+
+                            AppendtoFile(Now.ToString("dd/MM/yyyy hh:mm:ss") & ": manv: " + m_result & vbCrLf, LOG_FILENAME)
+
+
+                        Next
+
+
+
+                    End If
+                    AppendtoFile(Now.ToString("dd/MM/yyyy hh:mm:ss") & ": Commpleted with " & .Rows.Count & " records of E-Pay " & vbCrLf, LOG_FILENAME)
+                End With
+
+                ' send phieuluong to email.
+                If ds.Tables(0).Rows.Count = 0 Then
+
+                    strSQL = " select * from hoyav3.hr_data_send_notice where facode = '" + m_facode + "' and finishdate is null "
+                    Dim ds_check, ds_send As New DataSet
+                    ds_check = fcn_Getdata(strSQL, OraConn)
+                    If ds_check.Tables(0).Rows.Count > 0 Then
+
+                        strSQL = "  SELECT OID, ecode, fullname, dept, "
+                        strSQL += "  sectionname, workgroup, type_mess, "
+                        strSQL += " hoyav3.HOYA_QA_RECHECK.ssn_decrypt(  email) as email ,"
+                        strSQL += "  email_note, email_send, "
+                        strSQL += "  email_date, pddate, facode, note, "
+                        strSQL += " hoyav3.HOYA_QA_RECHECK.ssn_decrypt(  path_filename ) as path_filename , "
+                        strSQL += " lastupdate, LOCATION, type_mess_name, phanloaiHD, luu_y,them_tieu_de_email "
+                        strSQL += "   FROM hoyav3.hr_data "
+                        strSQL += " where facode='" + m_facode + "' "
+                        strSQL += " and pddate= " + ds_check.Tables(0).Rows(0).Item("pddate").ToString
+                        'strSQL += " and rownum <= 1 "
+                        strSQL += " and email is not null and note ='sending' "
+                        strSQL += " and path_filename is not null and rownum <= 1000 "
+
+                        ds_send = fcn_Getdata(strSQL, OraConn)
+
+                        Dim j As Integer
+                        Dim send_info As Send_notice
+                        If ds_send.Tables(0).Rows.Count > 0 Then
+                            For j = 0 To ds_send.Tables(0).Rows.Count - 1
+                                send_info = New Send_notice
+
+                                M_CODE = ds_send.Tables(0).Rows(j).Item("ecode").ToString
+                                M_oid_ERR = ds_send.Tables(0).Rows(j).Item("oid").ToString
+                                send_info.Get_oid = ds_send.Tables(0).Rows(j).Item("oid").ToString
+                                send_info.Get_ecode = ds_send.Tables(0).Rows(j).Item("ecode").ToString
+                                send_info.Get_fullname = ds_send.Tables(0).Rows(j).Item("fullname").ToString
+                                send_info.Get_dept = ds_send.Tables(0).Rows(j).Item("dept").ToString
+
+                                send_info.Get_sectionname = ds_send.Tables(0).Rows(j).Item("sectionname").ToString
+                                send_info.Get_workgroup = ds_send.Tables(0).Rows(j).Item("workgroup").ToString
+                                send_info.Get_type_mess = ds_send.Tables(0).Rows(j).Item("type_mess").ToString
+                                send_info.Get_email = ds_send.Tables(0).Rows(j).Item("email").ToString
+
+                                send_info.Get_pddate = ds_send.Tables(0).Rows(j).Item("pddate").ToString
+                                send_info.Get_facode = ds_send.Tables(0).Rows(j).Item("facode").ToString
+                                send_info.Get_path_filename = ds_send.Tables(0).Rows(j).Item("path_filename").ToString
+                                send_info.Get_LOCATION = ds_send.Tables(0).Rows(j).Item("LOCATION").ToString
+
+                                send_info.Get_type_mess_name = ds_send.Tables(0).Rows(j).Item("type_mess_name").ToString
+                                send_info.Get_phanloai_HD = ds_send.Tables(0).Rows(j).Item("phanloaiHD").ToString
+                                send_info.Get_luu_y = ds_send.Tables(0).Rows(j).Item("luu_y").ToString
+
+                                send_info.Get_them_tieu_de_email = ds_send.Tables(0).Rows(j).Item("them_tieu_de_email").ToString
+
+                                Dim m_mess, m_new_mess As String
+
+                                ' send email.
+
+                                m_mess = send_notices_employees(send_info)
+                                If m_mess.IndexOf("Sent") > 1 Then
+                                    m_new_mess = "Sent!"
+                                Else
+                                    m_new_mess = m_mess
+                                End If
+                                m_CBaseParameterSetting.UpdateData_Send_notice(ds_send.Tables(0).Rows(j).Item("OID").ToString, OraConn, m_new_mess)
+                                AppendtoFile(Now.ToString("dd/MM/yyyy hh:mm:ss") & ": manv: " + m_mess & vbCrLf, LOG_FILENAME)
+
+                            Next
+                            AppendtoFile(Now.ToString("dd/MM/yyyy hh:mm:ss") & ": sent email with " & ds_send.Tables(0).Rows.Count & " Email " & vbCrLf, LOG_FILENAME)
+                        End If
+                        '' check > 0
+                        If ds_send.Tables(0).Rows.Count = 0 Then
+                            '' reset cau lenh send.
+                            m_CBaseParameterSetting.UpdateData_check_notice(ds_check.Tables(0).Rows(0).Item("OID").ToString, OraConn, "")
+
+                        End If
+                    End If
+                End If
+
+            End If
+        Catch ex As Exception
+            AppendtoFile("CODE: " + M_CODE + " " + Now.ToString & "Send data to server fail: " & ex.Message & vbCrLf, LOG_FILENAME)
+            If M_oid_ERR <> "" Then
+                m_CBaseParameterSetting.UpdateData_Data_gen_note(M_oid_ERR, OraConn, ex.Message.Substring(0, 90))
+            End If
+            'MsgBox(M_CODE + " _ " + ex.ToString)
+        Finally
+            OraConn.Close()
+        End Try
+
+
+
+    End Sub
