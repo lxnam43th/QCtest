@@ -2,6 +2,7 @@
 2.2 nam
 1.1
 102
+1030
 
 Private Sub SendDataToServer(m_facode As String)
 
