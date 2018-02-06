@@ -8,7 +8,6 @@ namlx
 nam3
 nam45
 nam5
-=======
 nam1
 nam2
 nam3
