@@ -10,3 +10,6 @@ nam 2
 1.2 them tiep
 2.2 add
 2.3 add
+1.1nam1
+1.2nam2
+1.3nam3
